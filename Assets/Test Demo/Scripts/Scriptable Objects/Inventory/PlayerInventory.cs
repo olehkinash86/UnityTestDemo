@@ -70,54 +70,60 @@ public class PlayerInventory : Inventory, ISerializationCallbackReceiver
         return _foods[mountIndex];
     }
 
-    public override void DropAmmoItem(int mountIndex)
+    public override CollectableItem DropAmmoItem(int mountIndex)
     {
-        if (mountIndex < 0 || mountIndex >= _foods.Count) return;
+        if (mountIndex < 0 || mountIndex >= _foods.Count) return null;
 
         InventoryAmmoMountInfo itemMount = _ammo[mountIndex];
-        if (itemMount == null || itemMount.Ammo == null) return;
+        if (itemMount == null || itemMount.Ammo == null) return null;
 
         Vector3 position = _playerPosition != null ? _playerPosition.value : Vector3.zero;
         position += _playerDirection != null ? _playerDirection.value : Vector3.zero;
-        itemMount.Ammo.Drop(position);
+
+        var droppedItem = itemMount.Ammo.Drop(position);
 
         OnItemDropped.Invoke(itemMount.Ammo);
-
         _ammo[mountIndex].Ammo = null;
+
+        return droppedItem;
     }
-    
-    public override void DropFoodItem(int mountIndex)
+
+    public override CollectableItem DropFoodItem(int mountIndex)
     {
-        if (mountIndex < 0 || mountIndex >= _foods.Count) return;
+        if (mountIndex < 0 || mountIndex >= _foods.Count) return null;
 
         InventoryFoodMountInfo itemMount = _foods[mountIndex];
-        if (itemMount == null || itemMount.Item == null) return;
+        if (itemMount == null || itemMount.Item == null) return null;
 
         Vector3 position = _playerPosition != null ? _playerPosition.value : Vector3.zero;
         position += _playerDirection != null ? _playerDirection.value : Vector3.zero;
-        itemMount.Item.Drop(position);
+
+        var droppedItem = itemMount.Item.Drop(position);
 
         OnItemDropped.Invoke(itemMount.Item);
-
         _foods[mountIndex].Item = null;
+
+        return droppedItem;
     }
 
-    public override void DropWeaponItem(int mountIndex)
+    public override CollectableItem DropWeaponItem(int mountIndex)
     {
-        if (mountIndex < 0 || mountIndex >= _weapons.Count) return;
+        if (mountIndex < 0 || mountIndex >= _weapons.Count) return null;
 
         InventoryWeaponMountInfo itemMount = _weapons[mountIndex];
-        if (itemMount == null || itemMount.Weapon == null) return;
+        if (itemMount == null || itemMount.Weapon == null) return null;
 
         InventoryItemWeapon weapon = itemMount.Weapon;
 
         Vector3 position = _playerPosition != null ? _playerPosition.value : Vector3.zero;
         position += _playerDirection != null ? _playerDirection.value : Vector3.zero;
-        weapon.Drop(position);
+
+        var droppedItem = weapon.Drop(position);
 
         OnItemDropped.Invoke(itemMount.Weapon);
-
         _weapons[mountIndex].Weapon = null;
+
+        return droppedItem;
     }
 
     public override bool AddItem(CollectableItem collectableItem)
@@ -125,6 +131,7 @@ public class PlayerInventory : Inventory, ISerializationCallbackReceiver
         if (collectableItem == null || collectableItem.inventoryItem == null) return false;
 
         InventoryItem invItem = collectableItem.inventoryItem;
+        invItem.CollectableItem = collectableItem;
 
         switch (invItem.Category)
         {
@@ -153,6 +160,7 @@ public class PlayerInventory : Inventory, ISerializationCallbackReceiver
             if (food.Item == null)
             {
                 food.Item = inventoryItem;
+                food.attachedItem = collectableItem;
                 inventoryItem.Pickup(collectableItem.transform.position);
                 return true;
             }

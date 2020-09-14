@@ -10,7 +10,8 @@ public class CharacterManager : MonoBehaviour {
 	[SerializeField] private Inventory _inventory = null;
 	
 	private GameSceneManager _gameSceneManager = null;
-	private int 				_interactiveMask	 = 0;
+	private int _interactiveMask = 0;
+    private int _backpackMask = 0;
 
 	public CollectableItem SelectedDraggableItem = null;
 	public CollectableItem SelectedStorageItem = null;
@@ -18,6 +19,7 @@ public class CharacterManager : MonoBehaviour {
 	void Start () {
 		_gameSceneManager = GameSceneManager.Instance;
 		_interactiveMask	= 1 << LayerMask.NameToLayer("Interactive");
+        _backpackMask = 1 << LayerMask.NameToLayer("Backpack");
 
 		Cursor.visible = false;
 		Cursor.lockState = CursorLockMode.Locked;
@@ -53,7 +55,7 @@ public class CharacterManager : MonoBehaviour {
 
 	IEnumerator SendRequestToServer(InventoryItem item, string action)
     {
-        var url = "https://dev3r02.elysium.today/inventory/status";
+		var url = "https://dev3r02.elysium.today/inventory/status";
 		var postData = new Dictionary<string, string> {
 			{"name", item.Name },
 			{"action", action },
@@ -68,7 +70,7 @@ public class CharacterManager : MonoBehaviour {
 		if (www.isNetworkError || www.isHttpError)
 			Debug.Log(www.error);
 		else
-			Debug.Log($"{postData["name"]}, {postData["action"]}, {postData["Category"]}, " + www.downloadHandler.text);
+			Debug.Log($"{postData["name"]}, {postData["action"]}, {postData["Category"]}, " + "response:"+www.downloadHandler.text);
     }
 
 	void Update()
@@ -78,7 +80,7 @@ public class CharacterManager : MonoBehaviour {
 		var ray = _camera.ScreenPointToRay( new Vector3(Screen.width/2, Screen.height/2, 0));
 
 		// Cast Ray and collect ALL hits
-		var hits = Physics.RaycastAll (ray, 5, _interactiveMask );
+		var hits = Physics.RaycastAll (ray, 5, _interactiveMask | _backpackMask);
 
 		// Process the hits for the one with the highest priority
 		if (hits.Length>0)
@@ -106,19 +108,25 @@ public class CharacterManager : MonoBehaviour {
 				if (priorityObject.activationType == ActivationType.MouseButtonPressed && Input.GetMouseButton(0) ||
 					priorityObject.activationType == ActivationType.MouseButtonDown && Input.GetMouseButtonDown(0))
 				{
-					priorityObject.Activate( this );
+					priorityObject.Drag( this );
 				}
 			}
 		}
 
 		if(SelectedDraggableItem != null)
         {
-			SelectedDraggableItem.Activate(this);
-			if (Input.GetMouseButtonUp(0))
-				SelectedDraggableItem.Deactivate(this);
+			SelectedDraggableItem.Drag(this);
+            if (Input.GetMouseButtonUp(0))
+            {
+                SelectedDraggableItem.Drop();
+                SelectedDraggableItem = null;
+            }
 		}
 
-		if (SelectedStorageItem != null && Input.GetMouseButtonUp(0))
-			SelectedStorageItem.Deactivate(this);
-	}
+        if (SelectedStorageItem != null && Input.GetMouseButtonUp(0))
+        {
+            SelectedStorageItem.Drop();
+			SelectedStorageItem = null;
+		}
+    }
 }

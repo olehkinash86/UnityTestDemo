@@ -10,11 +10,11 @@ public class InventoryItem : ScriptableObject
     [SerializeField] protected float _weight = 0;
     [SerializeField] protected string _identifier = null;
 
-    [Tooltip("The collectable Item that is instantiated in the scene when this item is dropped from the Inventory.")]
-    [SerializeField] protected CollectableItem _collectableItem = null;
-
     [Tooltip("The type of Inventory Item this is.")]
     [SerializeField] protected InventoryItemType _category = InventoryItemType.None;
+
+    [Tooltip("The collectable Item that is instantiated in the scene when this item is dropped from the Inventory.")]
+    [SerializeField] public CollectableItem CollectableItem = null;
 
     // Property Getters
     public string Name => _name;
@@ -29,11 +29,11 @@ public class InventoryItem : ScriptableObject
 
     public virtual CollectableItem Drop(Vector3 position)
     {
-        if (_collectableItem != null)
+        if (CollectableItem != null)
         {
-            CollectableItem go = Instantiate<CollectableItem>(_collectableItem);
-            go.transform.position = position;
-            return go;
+            CollectableItem.transform.position = position;
+            CollectableItem.Drop();
+            return CollectableItem;
         }
 
         return null;
